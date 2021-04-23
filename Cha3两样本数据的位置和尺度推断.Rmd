@@ -1,0 +1,162 @@
+---
+title: "Cha3两样本数据的位置和尺度推断"
+author: "Haozhe_Pang"
+date: "4/22/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+对假定服从不同正态分布的两个样本有：
+$X_1,X_2,...X_m \sim^{i.i.d} N(\mu_{1},\sigma_{1}) $以及
+$Y_1,Y_2,...Y_m \sim^{i.i.d} N(\mu_{2},\sigma_{2}) $
+在参数统计中，通过假设检验区比较两者的均值、方差是否有显著性差异，以此来衡量两组数据是否具有区别。
+在非参数统计中，分别定义$\mu$为位置参数，定义$\sigma$为尺度参数。
+这里分别有： 
+对于两样本中位数位置的Brown-Mood中位数检验、Mann-Whitney秩和检验
+分别对于两样本尺度的Mood方法和Moses方法
+
+
+# 3.1 Brown-Mood中位数检验
+```{r}
+BM.test <- function(data,treat,alt,...){
+  xy = cbind.data.frame(data,treat)
+  x = xy[which(xy$treat == 1), 1]
+  y = xy[which(xy$treat == 2), 1]
+  xy_mid = median(xy[,1])
+  A = sum(x>xy_mid)
+  B = sum(y>xy_mid)
+  C = sum(x<xy_mid)
+  D = sum(y<xy_mid)
+  t = sum(A,B)
+  m = sum(A,C)
+  n = sum(B,D)
+  if(alt == "Small"){
+    p <- phyper(A,m,n,t)
+  }else if(alt == "Large"){
+    z = (A-m*t/(m+n)) / sqrt(m*n*t*(m+n-t)/((m+n)^3))
+    p = pnorm(z)
+  }else{print("No defined parameter, Please check the note")}
+  Contingency_table <- matrix(c(A,B,t,C,D,(m+n)-(A+B),m,n,m+n),
+                              3,3)
+  col_name <- c("X","Y","X+Y")
+  row_name <- c(">M_XY","<M_XY","Total")
+  dimnames(Contingency_table) = list(col_name,row_name)
+  result<-list(ContingencyTable=Contingency_table, p.value=p)
+return(result)
+}
+
+
+```
+
+```{r}
+data3.2 = c(698,688,675,656,655,648,640,639,620,
+            780,754,740,712,693,680,621) 
+treat3.2 = c(rep(1,9),rep(2,7))
+BM.test(data3.2,treat3.2,alt = "Small")
+
+
+```
+
+# 3.2 Wilcoxon-Mann-Whitney 秩和检验
+这一部分可以直接调用Wilcoxon.test()函数,但为了统一接口，我们对其进行了改写
+```{r}
+WMW.test <- function(data,treat){
+  xy = cbind.data.frame(data,treat)
+  x = xy[which(xy$treat == 1), 1]
+  y = xy[which(xy$treat == 2), 1]
+  result <- wilcox.test(x,y)
+return(result)
+}
+
+
+```
+
+## 例子3.3
+```{r}
+data3.3 = c(134,146,104,119,124,161,107,83,113,129,97,123,
+            70,118,101,85,112,132,94)
+treat3.3 = c(rep(1,12),rep(2,7))
+WMW.test(data3.3,treat3.3)
+weight_low = c(134,146,104,119,124,161,107,83,113,129,97,123)
+weight_high = c(70,118,101,85,112,132,94)
+wilcox.test(weight_high,weight_low)
+```
+# 3.3 Mood 方差检验
+mood方差检验可以直接调用R中的mood.test,接下来统计数据接口
+```{r}
+md.test <- function(data,treat,...){
+  xy = cbind.data.frame(data,treat)
+  x = xy[which(xy$treat == 1), 1]
+  y = xy[which(xy$treat == 2), 1]
+  result <- mood.test(x,y)
+return(result)
+} 
+
+
+
+```
+
+```{r}
+data3.5 = c(4.5,6,6.5,7,
+            7.2,8,9,9.8,10,12)
+treat3.5 = c(rep(1,4),rep(2,6))
+data3.51 = c(4.5,6,6.5,7)
+data3.52 = c(7.2,8,9,9.8,10,12)
+md.test(data3.5,treat3.5)
+mood.test(data3.51,data3.52)
+
+
+
+
+```
+检查两者没有区别
+
+
+# 3.4 Moses方差检验
+
+moses方差检验可以直接调用R中的MosesTest,接下来统计数据接口
+```{r}
+moses.test <- function(data,treat,...){
+  if(!('DescTools' %in% (.packages()))){library(DescTools)}
+  xy = cbind.data.frame(data,treat)
+  x = xy[which(xy$treat == 1), 1]
+  y = xy[which(xy$treat == 2), 1]
+  result <- MosesTest(x,y)
+return(result)
+} 
+
+
+
+
+```
+
+```{r}
+data3.6 = c(8.2,10.7,7.5,14.6,6.3,9.2,11.9,5.6,12.8,5.2,4.9,13.5,
+            4.7,6.3,5.2,6.8,5.6,4.2,6.0,7.4,8.1,6.5)
+treat3.6 = c(rep(1,12),rep(2,10))
+moses.test(data3.6,treat3.6)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
