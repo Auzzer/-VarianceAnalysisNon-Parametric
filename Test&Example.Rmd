@@ -1,0 +1,92 @@
+---
+title: "Test&Example"
+author: "HaozhePang"
+date: "2021/4/27"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+################################################################################
+#调整秩和检验，亦称为Hodges-Lehmmann 检验（HL检验）
+HollanderWolfe.test<- function(data, treat, block,...){
+  x = cbind.data.frame(data,treat,block)
+  # 计算block数量
+  n = length(unique(block)) # 对应书里的b
+  # 计算treat数量
+  k = length(unique(treat))
+  # 初始化秩矩阵
+  R = matrix(0,k,n)
+  for (i in 1:n){
+    R[i,]=rank(subset(x, block ==i)$data)
+  }
+  l <- n
+  Rj <- NULL
+  for (i in 1:l){
+    Rj<- cbind(Rj, sum(R[,i]))
+  }
+    
+  # 判定是否存在结
+  tau = c(0,n)
+  library(plyr)
+  for(i in 1:n){tau[i]=max(count(R[i,])$freq)}
+  
+  if (sum(tau)==length(tau)){# sum(tau)=length(tau) 代表没有结
+    print("no plot")
+    SE = sqrt(k*(k+1)/6)
+  }else{
+    print("plots exit")
+    SE = sqrt((k*(k+1)/6)-n*(sum(tau^3-tau))/(6*(k-1)))
+  }
+  
+  diff_ij = c()
+  rowname <- NULL
+  for (i in 1:(l-1)){
+    for ( j in 1:(l-i)){
+      diff = abs(Rj[i]-Rj[(i+j)])
+      # print("asd")
+      diff_ij <- cbind(diff_ij,diff)
+      rowname <- cbind(rowname,paste(i,"VS", (i+j)))
+    }
+  }
+  
+  D_ij <- NULL
+  for (i in 1:length(diff_ij)) {
+    D = diff_ij[i]/SE
+    D_ij <- cbind(D_ij,D)
+  }
+  dimNum = choose(length(Rj),2)
+  se = rep(SE, dimNum)
+  alpha.star = 0.05/(choose(length(Rj),2))
+  z = qnorm(1-alpha.star)
+  Z = rep(z, choose(length(Rj),2))
+  result_table <- matrix(c(diff_ij,se,D_ij,Z),choose(length(Rj),2),4,byrow = FALSE)
+  rownames(result_table) <- rowname
+  colnames(result_table) <- c("|\bar{R_.i}-\bar{R.j}|","SE","D_ij","Z")
+  result <- list(Table = result_table, alphastar = alpha.star,Z=Z)
+  print("if D_ij is larger than Z, it shows that these two have connections.")
+return(result)
+  
+  
+  
+}
+
+
+```
+
+
+```{r}
+PekingFish <-c(85,82,82,79,
+               87,75,86,82,
+               90,81,80,76,
+               80,75,81,75)
+treat.PekingFish <- c(rep(1:4, time=4))
+block.PekingFish <- c(rep(1:4, each=4))
+HollanderWolfe.test(PekingFish,treat.PekingFish, block.PekingFish)
+
+
+
+```
