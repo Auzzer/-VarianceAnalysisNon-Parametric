@@ -9,3 +9,6 @@ What's more, here is a overview of ANOVA in different conditions:
 
 
 For more details, please check the NonParametricAnalysisofVariance.pdf 
+
+This R Package is testing under official R Cran, and it would face the world soon.
+If you need more help, you can contact me @haozhe_pang@nuist.edu.cn
